@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  horizon-moc:
+    container_name: horizon-moc
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: horizon-moc
+    ports:
+      - "8001:80"  # host:container

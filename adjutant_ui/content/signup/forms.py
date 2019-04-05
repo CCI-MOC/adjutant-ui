@@ -24,17 +24,26 @@ from adjutant_ui.api import adjutant
 
 
 class SignupForm(hforms.SelfHandlingForm):
-    username = forms.CharField(
-        max_length=255, label=_("User Name"),
-        widget=forms.TextInput(attrs={"autofocus": "autofocus"}))
-    email = forms.EmailField(label=_("Email"))
     project_name = forms.CharField(label=_("Project Name"), max_length=64)
+    project_description = forms.CharField(
+        label=_("Project Description"),
+        widget=forms.widgets.Textarea(attrs={'rows': 4})
+    )
     setup_network = forms.BooleanField(
         label=_("Create Default Network"),
         help_text=_("Create a basic network during account creation so that "
                     "you can deploy VMs immediately."),
         required=False,
         initial=True)
+
+    organization = forms.CharField(label=_("Organization"), max_length=64)
+    organization_role = forms.CharField(label=_("Role in organization"), max_length=64)
+    phone = forms.CharField(label=_("Phone Number"))
+
+    moc_contact = forms.CharField(
+        label=_("MOC Contact"),
+        help_text=_("MassOpenCloud member who is sponsoring your project.")
+    )
 
     def __init__(self, *args, **kwargs):
         super(SignupForm, self).__init__(*args, **kwargs)

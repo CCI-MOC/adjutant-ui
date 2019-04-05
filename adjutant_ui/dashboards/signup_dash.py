@@ -24,7 +24,7 @@ class SignupDashboard(horizon.Dashboard):
     slug = "signup"
     default_panel = 'signup'
     nav = False
-    public = True
+    public = False
 
 
 horizon.register(SignupDashboard)
