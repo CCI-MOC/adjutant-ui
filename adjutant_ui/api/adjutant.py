@@ -377,7 +377,8 @@ def forgotpassword_submit(request, data):
 
 
 def signup_submit(request, data):
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json",
+               "X-Auth-Token": request.session['fernet_token']}
     try:
         return post(request, 'openstack/sign-up',
                     data=json.dumps(data),

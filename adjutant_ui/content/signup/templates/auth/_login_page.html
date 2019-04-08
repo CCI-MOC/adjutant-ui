@@ -3,5 +3,5 @@
 
 {% block login_footer %}
   {{ block.super }}
-  <p>Don't have a project? <a href="{% url 'horizon:signup:signup:index' %}">Sign up</a>.</p>
+  <p>Don't have a project? <a href="https://sso.massopen.cloud/auth/realms/moc/protocol/openid-connect/auth?response_type=code&client_id=devstack-test&redirect_uri=http://localhost:8001{% url 'horizon:signup:signup:index' %}">Sign up</a>.</p>
 {% endblock %}

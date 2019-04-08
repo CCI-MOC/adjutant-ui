@@ -24,7 +24,8 @@ class SignupDashboard(horizon.Dashboard):
     slug = "signup"
     default_panel = 'signup'
     nav = False
-    public = False
+    # Note(knikolla): Set this to public so that we can handle OIDC directly.
+    public = True
 
 
 horizon.register(SignupDashboard)
