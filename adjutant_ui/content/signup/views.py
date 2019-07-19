@@ -25,6 +25,8 @@ from horizon import forms
 
 from adjutant_ui.content.signup import forms as su_forms
 
+import os
+
 
 class SignupFormView(forms.ModalFormView):
     form_class = su_forms.SignupForm
@@ -35,21 +37,8 @@ class SignupFormView(forms.ModalFormView):
     def get_context_data(self, **kwargs):
         context = super(SignupFormView, self).get_context_data(**kwargs)
 
-        # TODO(knikolla): CSRF
-        code = self.request.GET.get('code', None)
-        r = requests.post(
-            settings.OIDC_TOKEN_URL,
-            data={
-                'grant_type': 'authorization_code',
-                'client_id': settings.OIDC_CLIENT_ID,
-                'client_secret': settings.OIDC_CLIENT_SECRET,
-                'code': code,
-                'redirect_uri': 'http://localhost:8001%s' % reverse_lazy('horizon:signup:signup:index')
-            },
-        )
-        text = r.text
-        assert r.status_code == 200
-        access_token = json.loads(r.text)['access_token']
+        access_token = self.request.META['OIDC_access_token']
+        assert access_token
 
         auth = OidcAccessToken(auth_url=settings.OPENSTACK_KEYSTONE_URL,
                                identity_provider='moc',

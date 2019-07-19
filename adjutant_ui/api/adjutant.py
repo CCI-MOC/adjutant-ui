@@ -382,7 +382,8 @@ def signup_submit(request, data):
     try:
         return post(request, 'openstack/sign-up',
                     data=json.dumps(data),
-                    headers=headers)
+                    headers=headers,
+                    timeout=30)
     except Exception as e:
         LOG.error(e)
         raise

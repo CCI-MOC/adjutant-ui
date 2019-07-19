@@ -25,7 +25,7 @@ from adjutant_ui.api import adjutant
 
 class SignupForm(hforms.SelfHandlingForm):
     project_name = forms.CharField(label=_("Project Name"), max_length=64)
-    project_description = forms.CharField(
+    description = forms.CharField(
         label=_("Project Description"),
         widget=forms.widgets.Textarea(attrs={'rows': 4})
     )
