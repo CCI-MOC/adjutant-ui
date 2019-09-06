@@ -37,6 +37,7 @@ class SignupFormView(forms.ModalFormView):
     def get_context_data(self, **kwargs):
         context = super(SignupFormView, self).get_context_data(**kwargs)
 
+        # FIXME(knikolla): Make a decorator out of this
         access_token = self.request.META['OIDC_access_token']
         assert access_token
 

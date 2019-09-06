@@ -331,7 +331,7 @@ def valid_roles_get(request):
 
 def valid_role_names_get(request):
     roles_data = valid_roles_get(request)
-    role_names = [r['name'] for r in roles_data['roles']]
+    role_names = [r['name'] for r in roles_data['roles'] if r['name'] != '_member_']
     return role_names
 
 

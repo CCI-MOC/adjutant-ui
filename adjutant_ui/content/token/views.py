@@ -25,6 +25,11 @@ from adjutant_ui.api import adjutant
 from adjutant_ui.content.token import forms as token_forms
 
 
+def _redirect_to_docs_response(request):
+    response = http.HttpResponseRedirect('https://docs.massopen.cloud/en/latest/')
+    return response
+
+
 def _logout_msg_response(request, msg):
     response = http.HttpResponseRedirect(settings.LOGOUT_URL)
     utils.add_logout_reason(request, response, msg)
@@ -51,10 +56,10 @@ def submit_token_router(request, *args, **kwargs):
     if 'password' in json['required_fields']:
         return SubmitTokenPasswordView.as_view()(request, *args, **kwargs)
     elif 'confirm' in json['required_fields']:
-
-        if 'UpdateUserEmailAction' in json['actions']:
-            return UpdateEmailTokenSubmitView.as_view()(
-                request, *args, **kwargs)
+        # Note(knikolla): We don't support changing passwords
+        # if 'UpdateUserEmailAction' in json['actions']:
+        #     return UpdateEmailTokenSubmitView.as_view()(
+        #        request, *args, **kwargs)
         return SubmitTokenConfirmView.as_view()(request, *args, **kwargs)
 
     return _logout_msg_response(request, _("Unsupported token type."))
@@ -116,16 +121,30 @@ class SubmitTokenConfirmView(forms.ModalFormView):
         return sc.post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        def get_fernet_token():
+            from keystoneauth1.session import Session
+            from keystoneauth1.identity.v3.oidc import OidcAccessToken
+            access_token = self.request.META['OIDC_access_token']
+            assert access_token
+
+            auth = OidcAccessToken(auth_url=settings.OPENSTACK_KEYSTONE_URL,
+                                   identity_provider='moc',
+                                   protocol='openid',
+                                   access_token=access_token)
+            session = Session(auth=auth)
+            return session.get_token()
+
         token_uuid = self.kwargs['token']
         parameters = {
-            'confirm': True
+            'confirm': True,
+            'token': get_fernet_token()
         }
         token_response = adjutant.token_submit(form.request,
                                                token_uuid,
                                                parameters)
 
         if token_response.ok:
-            return _logout_msg_response_success(form.request, self.success_msg)
+            return _redirect_to_docs_response(form.request)
 
         msg = (_("Token form submission failed. "
                  "Response code %(code)s.") % {'code':
