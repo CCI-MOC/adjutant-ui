@@ -16,12 +16,12 @@ import collections
 import json
 import logging
 import requests
-from six.moves.urllib.parse import urljoin
-import six
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
+from horizon import exceptions
 from horizon.utils import functions as utils
 from horizon.utils import memoized
 
@@ -74,16 +74,16 @@ QUOTA_TASK = collections.namedtuple(
 # IMPORTANT_QUOTAS = {<service>: [<quota_name>], }
 IMPORTANT_QUOTAS = {
     'nova': [
-         'instances', 'cores', 'ram',
+        'instances', 'cores', 'ram',
     ],
     'cinder': [
         'volumes', 'snapshots', 'gigabytes',
     ],
     'neutron': [
-         'network', 'floatingip', 'router', 'security_group',
+        'network', 'floatingip', 'router', 'security_group',
     ],
     'octavia': [
-         'load_balancer',
+        'load_balancer',
     ],
 }
 
@@ -160,9 +160,15 @@ def _get_endpoint_url(request):
     # If the request is made by an anonymous user, this endpoint request fails.
     # Thus, we must hardcode this in Horizon.
     if getattr(request.user, "service_catalog", None):
-        url = base.url_for(request, service_type='registration')
+        try:
+            url = base.url_for(request, service_type='admin-logic')
+        except exceptions.ServiceCatalogException:
+            url = base.url_for(request, service_type='registration')
     else:
-        url = getattr(settings, 'OPENSTACK_REGISTRATION_URL')
+        try:
+            url = getattr(settings, 'OPENSTACK_ADJUTANT_URL')
+        except AttributeError:
+            url = getattr(settings, 'OPENSTACK_REGISTRATION_URL')
 
     # Ensure ends in slash
     if not url.endswith('/'):
@@ -433,7 +439,7 @@ def notification_obj_get(request, notification_id=None, notification=None):
     if isinstance(notes, list) and len(notes) == 1:
         notes = notes[0]
 
-    if not isinstance(notes, six.text_type):
+    if not isinstance(notes, str):
         notes = json.dumps(notes)
 
     return NOTIFICATION(uuid=notification['uuid'],
@@ -507,18 +513,18 @@ def task_obj_get(request, task_id=None, task=None, page=0):
     valid = False not in [action['valid'] for
                           action in task['actions']]
     return TASK(
-            id=task['uuid'],
-            task_type=task['task_type'],
-            valid=valid,
-            request_by=task['keystone_user'].get('username', '-'),
-            request_project=task['keystone_user'].get('project_name', '-'),
-            status=status,
-            created_on=task['created_on'],
-            approved_on=task['approved_on'],
-            completed_on=task['completed_on'],
-            actions=task['actions'],
-            page=page
-        )
+        id=task['uuid'],
+        task_type=task['task_type'],
+        valid=valid,
+        request_by=task['keystone_user'].get('username', '-'),
+        request_project=task['keystone_user'].get('project_name', '-'),
+        status=status,
+        created_on=task['created_on'],
+        approved_on=task['approved_on'],
+        completed_on=task['completed_on'],
+        actions=task['actions'],
+        page=page
+    )
 
 
 def task_cancel(request, task_id):
@@ -611,7 +617,7 @@ def quota_sizes_get(request, region=None):
 
 
 def size_details_get(request, size, region=None):
-    """ Gets the current details of the size as well as the current region's
+    """Gets the current details of the size as well as the current region's
     quota
     """
     quota_details = []
@@ -632,7 +638,7 @@ def size_details_get(request, size, region=None):
             usage = resp['regions'][0]['current_usage'][service].get(
                 resource)
             try:
-                percent = float(usage)/value
+                percent = float(usage) / value
             except (TypeError, ZeroDivisionError):
                 percent = '-'
 
@@ -666,7 +672,7 @@ def quota_details_get(request, region):
                 value = 'No Limit'
             usage = resp['regions'][0]['current_usage'][service].get(name)
             try:
-                percent = float(usage)/value
+                percent = float(usage) / value
             except (TypeError, ZeroDivisionError):
                 percent = '-'
 
