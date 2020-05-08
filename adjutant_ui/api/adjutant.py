@@ -218,7 +218,7 @@ def user_invite(request, user):
     headers = {'Content-Type': 'application/json',
                'X-Auth-Token': request.user.token.id}
     user['project_id'] = request.user.tenant_id
-    return post(request, 'openstack/users',
+    return post(request, 'moc/Users',
                 headers=headers, data=json.dumps(user))
 
 
@@ -227,7 +227,7 @@ def user_list(request):
     try:
         headers = {'Content-Type': 'application/json',
                    'X-Auth-Token': request.user.token.id}
-        resp = json.loads(get(request, 'openstack/users',
+        resp = json.loads(get(request, 'moc/Users',
                               headers=headers).content)
 
         for user in resp['users']:
@@ -250,7 +250,7 @@ def user_list(request):
 def user_get(request, user_id):
     try:
         headers = {'X-Auth-Token': request.user.token.id}
-        resp = get(request, 'openstack/users/%s' % user_id,
+        resp = get(request, 'moc/Users/%s' % user_id,
                    headers=headers).content
         return json.loads(resp)
     except Exception as e:
@@ -264,7 +264,7 @@ def user_roles_update(request, user):
                    'X-Auth-Token': request.user.token.id}
         user['project_id'] = request.user.tenant_id
         user['roles'] = user.roles
-        return put(request, 'openstack/users/%s/roles' % user['id'],
+        return put(request, 'moc/Users/%s/roles' % user['id'],
                    headers=headers,
                    data=json.dumps(user))
     except Exception as e:
@@ -279,7 +279,7 @@ def user_roles_add(request, user_id, roles):
         params = {}
         params['project_id'] = request.user.tenant_id
         params['roles'] = roles
-        return put(request, 'openstack/users/%s/roles' % user_id,
+        return put(request, 'moc/Users/%s/roles' % user_id,
                    headers=headers,
                    data=json.dumps(params))
     except Exception as e:
@@ -294,7 +294,7 @@ def user_roles_remove(request, user_id, roles):
         params = {}
         params['project_id'] = request.user.tenant_id
         params['roles'] = roles
-        return delete(request, 'openstack/users/%s/roles' % user_id,
+        return delete(request, 'moc/Users/%s/roles' % user_id,
                       headers=headers,
                       data=json.dumps(params))
     except Exception as e:
@@ -307,7 +307,7 @@ def user_revoke(request, user_id):
         headers = {'Content-Type': 'application/json',
                    'X-Auth-Token': request.user.token.id}
         data = dict()
-        return delete(request, 'openstack/users/%s' % user_id,
+        return delete(request, 'moc/Users/%s' % user_id,
                       headers=headers,
                       data=json.dumps(data))
     except Exception as e:
@@ -331,7 +331,7 @@ def user_invitation_resend(request, user_id):
 def valid_roles_get(request):
     headers = {'Content-Type': 'application/json',
                'X-Auth-Token': request.user.token.id}
-    role_data = get(request, 'openstack/roles', headers=headers)
+    role_data = get(request, 'moc/Roles', headers=headers)
     return role_data.json()
 
 
@@ -348,8 +348,10 @@ def token_get(request, token, data):
 
 
 def token_submit(request, token, data):
-    headers = {"Content-Type": "application/json"}
-    return post(request, 'tokens/%s' % token,
+    user_token = data.pop('token')
+    headers = {"Content-Type": "application/json",
+               'X-Auth-Token': user_token}
+    return post(request, 'moc/Invitations/%s' % token,
                 data=json.dumps(data), headers=headers)
 
 
@@ -385,8 +387,19 @@ def forgotpassword_submit(request, data):
 def signup_submit(request, data):
     headers = {"Content-Type": "application/json",
                "X-Auth-Token": request.session['fernet_token']}
+
+    # Switch from a boolean for OpenShift,
+    # to a list. OpenStack will always be required,
+    # since we're getting the authZ data from there.
+    # OpenShift is optional.
+    #openshift = data.pop('openshift')
+    #if openshift:
+    #    services.append('kaizen-openshift')
+    #data['services'] = services
+    data['services'] = []
+
     try:
-        return post(request, 'openstack/sign-up',
+        return post(request, 'moc/Projects',
                     data=json.dumps(data),
                     headers=headers,
                     timeout=30)

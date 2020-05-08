@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 from django.conf import settings
 from django import forms
 from django import http
@@ -29,6 +31,15 @@ class SignupForm(hforms.SelfHandlingForm):
         label=_("Project Description"),
         widget=forms.widgets.Textarea(attrs={'rows': 4})
     )
+
+    #openshift = forms.BooleanField(
+    #    label=_("Include OpenShift Service"),
+    #    help_text=_("If this is selected, an OpenShift project will also be "
+    #                "provisioned."),
+    #    required=False,
+    #    initial=False,
+    #)
+
     setup_network = forms.BooleanField(
         label=_("Create Default Network"),
         help_text=_("Create a basic network during account creation so that "
@@ -47,11 +58,6 @@ class SignupForm(hforms.SelfHandlingForm):
 
     def __init__(self, *args, **kwargs):
         super(SignupForm, self).__init__(*args, **kwargs)
-        if (hasattr(settings, 'USERNAME_IS_EMAIL') and
-                getattr(settings, 'USERNAME_IS_EMAIL')):
-            self.fields.pop('username')
-            self.fields['email'].widget = forms.TextInput(
-                attrs={"autofocus": "autofocus"})
 
     def handle(self, request, data):
         submit_response = adjutant.signup_submit(
@@ -60,8 +66,11 @@ class SignupForm(hforms.SelfHandlingForm):
             return True
 
         # Send the user back to the login page.
-        msg = _("The signup service is currently unavailable. "
-                "Please try again later.")
+        msg = submit_response.text
+        if not msg:
+            msg = _("The signup service is currently unavailable. "
+                    "Please try again later.")
+
         response = http.HttpResponseRedirect(settings.LOGOUT_URL)
         utils.add_logout_reason(self.request, response, msg)
         return response

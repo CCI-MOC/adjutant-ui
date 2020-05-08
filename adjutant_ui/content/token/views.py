@@ -146,9 +146,7 @@ class SubmitTokenConfirmView(forms.ModalFormView):
         if token_response.ok:
             return _redirect_to_docs_response(form.request)
 
-        msg = (_("Token form submission failed. "
-                 "Response code %(code)s.") % {'code':
-                                               token_response.status_code})
+        msg = token_response.text
         return _logout_msg_response(form.request, msg)
 
     def get_context_data(self, **kwargs):
